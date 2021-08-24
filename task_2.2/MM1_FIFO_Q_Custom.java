@@ -1,6 +1,6 @@
 package task_22;
 
-//task 2.2 FIFO vs LIFO based on TestShadesOfMM1, class MM1Model
+//task 2.3 queue with priority based on TestShadesOfMM1, class MM1Model, using the custom queue Q_Custom
 
 import java.util.Map;
 
@@ -13,17 +13,18 @@ import jasima.core.random.discrete.IntSequence;
 import jasima.core.random.discrete.IntUniformRange;
 import jasima.core.simulation.SimComponentBase;
 import jasima.core.simulation.Simulation;
-import jasima.core.simulation.generic.Q;
 import jasima.core.util.ConsolePrinter;
+import misc.Q_Custom;
 
-public class MM1_FIFO {
+public class MM1_FIFO_Q_Custom {
+
 	private static boolean consoleLog = false; //log printed in console for troubleshooting
 	
 	private static boolean FIFO = true; //if false, LIFO
 	private static final double LENGTH_SIM = 100.0; //duration of the simulation in minutes
 	private static final int NUM_JOB_TYPES = 10; //number of different types of jobs
 	private static final double MEAN_TIME = 10.0; //average time in minutes for both jobs and services
-	private static final int RANDOM_FACTORY_SEED = 28; //seed used for the simulation's random factory
+	private static final int RANDOM_FACTORY_SEED = 4; //seed used for the simulation's random factory
 	
 	static class MM1 extends SimComponentBase {
 
@@ -47,25 +48,27 @@ public class MM1_FIFO {
 		 * analog service queue and waits for a job of matching type. Once such a job arrives and finds a waiting
 		 * service of the same type, it immediately initializes the servicing process.
 		 * */
-		@SuppressWarnings("unchecked")
-		private Q<Integer>[] qJob = new Q[NUM_JOB_TYPES]; //queue for jobs
-		@SuppressWarnings("unchecked")
-		private Q<Integer>[] qService = new Q[NUM_JOB_TYPES]; //queue for services
+		private Q_Custom[] qJob = new Q_Custom[NUM_JOB_TYPES]; //queue for jobs
+		private Q_Custom[] qService = new Q_Custom[NUM_JOB_TYPES]; //queue for services
 		
 		@Override
 		public void init() {
 			super.init();
 			
+			/* A random factory is needed to create the random number sequences for the types and arrival times of jobs
+			 * and services. The previously defined random seed is used.
+			 */
+			RandomFactory rf = new RandomFactory(getSim(), RANDOM_FACTORY_SEED);
 			//random sequences for types and arrival times are initialized
-			arrivalJob = initRndGen(new DblExp(MEAN_TIME), "jobs");
-			arrivalService = initRndGen(new DblExp(MEAN_TIME), "services");
-			typeJob = initRndGen(new IntUniformRange(0, NUM_JOB_TYPES - 1), "typeJobs");
-			typeService = initRndGen(new IntUniformRange(0, NUM_JOB_TYPES - 1), "typeServices");
+			arrivalJob = rf.initRndGen(new DblExp(MEAN_TIME), "jobs");
+			arrivalService = rf.initRndGen(new DblExp(MEAN_TIME), "services");
+			typeJob = rf.initRndGen(new IntUniformRange(0, NUM_JOB_TYPES - 1), "typeJobs");
+			typeService = rf.initRndGen(new IntUniformRange(0, NUM_JOB_TYPES - 1), "typeServices");
 			
 			 //both queues are initialized
 			for(int i = 0; i < NUM_JOB_TYPES; i++) {
-				qJob[i] = new Q<>();
-				qService[i] = new Q<>();
+				qJob[i] = new Q_Custom(getSim(), FIFO);
+				qService[i] = new Q_Custom(getSim());
 			}
 			
 			//the first job and first service are scheduled
@@ -77,9 +80,21 @@ public class MM1_FIFO {
 		@Override
 		public void produceResults(Map<String, Object> res) {
 			super.produceResults(res);
-			res.put("numJobs", countJob);
-			res.put("numServices", countService);
-			res.put("numServicedJobs", countServicedJobs);
+			
+			res.put("countJob", countJob);
+			res.put("countService", countService);
+			res.put("countServicedJobs", countServicedJobs);
+			
+			double commulativeMeanWaitTime = 0;
+			double commulativeMaxWaitTime = 0;
+			for (int i = 0; i < NUM_JOB_TYPES; i++) {
+				res.put("type " + (i + 1) + " mean wait time", qJob[i].getMeanWait());
+				res.put("type " + (i + 1) + " max wait time", qJob[i].getMaxWait());
+				commulativeMeanWaitTime += qJob[i].getMeanWait();
+				commulativeMaxWaitTime += qJob[i].getMaxWait();
+			}
+			res.put("average mean wait time", commulativeMeanWaitTime / NUM_JOB_TYPES);
+			res.put("average max wait time", commulativeMaxWaitTime / NUM_JOB_TYPES);
 		}
 		
 		//method to simplify the printing of text in the console
@@ -93,14 +108,14 @@ public class MM1_FIFO {
 			int qNmr = typeJob.nextInt(); //the new job's type is randomly defined
 			int jobID = countJob++; //the job's ID is saved and the job counter increased by one
 			prtLine("new job     " + jobID + " type " + qNmr + " at " + getSim().simTime());
-			qJob[qNmr].tryPut(jobID); //the job is added to the corresponding queue
+			qJob[qNmr].put(jobID); //the job is added to the corresponding queue
 			/* For every job queue there is a corresponding service queue. Every new job looks in it's service queue
 			 * for a waiting service, based on the job's type. If it finds a service, the service is removed from the
 			 * queue and the servicing process is immediately started. If the job does not find a waiting service
 			 * nothing further needs to be done. Finally the next job is scheduled at a random time.
 			 */
 			if (qService[qNmr].numItems() > 0) { //waiting service is found in corresponding queue
-				int service = qService[qNmr].tryTake(); //service is removed from queue
+				int service = qService[qNmr].take(); //service is removed from queue
 				prtLine("			waiting service " + service + " found");
 				serviceProcess(qNmr); //the job's servicing process is started
 			} else {
@@ -123,7 +138,7 @@ public class MM1_FIFO {
 				serviceProcess(qNmr); //the job's servicing process is started
 			} else {
 				prtLine("			service added to queue");
-				qService[qNmr].tryPut(countService); //the service is added to the corresponding queue
+				qService[qNmr].put(serviceID); //the service is added to the corresponding queue
 			}
 			scheduleIn(arrivalService.nextDbl(), getSim().currentPrio(), this::nextService); //the next service is scheduled
 		}
@@ -131,11 +146,7 @@ public class MM1_FIFO {
 		void serviceProcess(int qNmr) {
 			int job;
 			//depending if FIFO or LIFO is active the right take call is used and the job removed from the queue 
-			if (FIFO == true) {
-				job = qJob[qNmr].tryTake();
-			} else {
-				job = qJob[qNmr].tryTakeLast();
-			}
+			job = qJob[qNmr].take();
 			prtLine("			job " + job + " processed");
 			countServicedJobs++; //the counter for serviced jobs is increased by one
 		}
@@ -146,11 +157,6 @@ public class MM1_FIFO {
 		
 		Simulation sim = new Simulation(); //new simulation is created
 		sim.setSimulationLength(LENGTH_SIM); //the simulation's length is set
-		/* A random factory is needed to create the random number sequences for the types and arrival times of jobs
-		 * and services. The previously defined random seed is used.
-		 */
-		RandomFactory rf = new RandomFactory(sim, RANDOM_FACTORY_SEED);
-		sim.setRndStreamFactory(rf);
 		sim.addComponent(new MM1());
 		/* All the statistics produced and at the end returned by the simulation and saved in the map res to later
 		 * be printed in the console
