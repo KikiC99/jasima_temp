@@ -20,14 +20,15 @@ public class Q_Custom {
 	Simulation qSim;
 	ArrayList<Job> q = new ArrayList<Job>();
 	private int qMax = 0;
-	private double maxWaitTime = 0;
-	private double meanWaitTime = 0;
+	private double maxWaitTime = 0.0;
+	private double meanWaitTime = 0.0;
+	private double meanWeightedWaitTime = 0.0;
 	private int finishedJobs = 0;
-	private boolean FIFO;
+	private boolean FIFO = true;
+	private Integer maxPrio = null;
 	
 	public Q_Custom (Simulation sim) {
 		qSim = sim;
-		FIFO = true;
 	}
 	
 	public Q_Custom (Simulation sim, boolean fifo) {
@@ -35,8 +36,20 @@ public class Q_Custom {
 		FIFO = fifo;
 	}
 	
-	private void addWaitTime(double waitTime) {
-		meanWaitTime = (meanWaitTime * finishedJobs++ + waitTime) / (finishedJobs);
+	public Q_Custom (Simulation sim, boolean fifo, int prio) {
+		qSim = sim;
+		FIFO = fifo;
+		if (prio > 0) {
+			maxPrio = prio;
+		}
+	}
+	
+	private void addWaitTime(double waitTime, Integer prio) {
+		meanWaitTime = (meanWaitTime * finishedJobs + waitTime) / (finishedJobs + 1);
+		if (prio != null && maxPrio != null) {
+			meanWeightedWaitTime = (meanWeightedWaitTime * finishedJobs + waitTime * ((prio - maxPrio - 1) * (-1))) / (finishedJobs + 1);
+		}
+		finishedJobs++;
 		if (waitTime > maxWaitTime) {
 			maxWaitTime = waitTime;
 		}
@@ -54,7 +67,7 @@ public class Q_Custom {
 	private Job finishJob (int row) {
 		Job job = q.get(row);
 		q.remove((int)row);
-		addWaitTime(qSim.simTime() - job.entryTime);
+		addWaitTime(qSim.simTime() - job.entryTime, job.prio);
 		return job;
 	}
 	
@@ -127,6 +140,10 @@ public class Q_Custom {
 	
 	public double getMeanWait() {
 		return meanWaitTime;
+	}
+	
+	public double getMeanWeightedTime() {
+		return meanWeightedWaitTime;
 	}
 	
 	public void printQ() {
