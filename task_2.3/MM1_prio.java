@@ -20,7 +20,7 @@ public class MM1_prio {
 	private static boolean consoleLog = false; //log printed in console for troubleshooting
 
 	private static final double LENGTH_SIM = 20.0; //duration of the simulation in minutes
-	private static final int NUM_PRIO = 2; //number of priorities
+	private static final int NUM_PRIO = 10; //number of priorities
 	private static final double SERVICE_TIME = 4.0; //time in minutes for the duration of services
 	private static final int RANDOM_FACTORY_SEED = 41; //seed used for the simulation's random factory
 	
@@ -51,7 +51,7 @@ public class MM1_prio {
 			meanArrival = rf.initRndGen(new IntEmpirical("timeArrivals", arrivalDistrib, arrivalTime));
 			prioArrival = rf.initRndGen(new IntUniformRange(1, NUM_PRIO), "prioArrivals");
 			
-			q = new Q_Custom(getSim()); //The queue is initialized
+			q = new Q_Custom(getSim(), true, NUM_PRIO); //The queue is initialized
 			
 			//the first job is scheduled
 			scheduleIn(meanArrival.nextDbl(), getSim().currentPrio(), this::nextJob);
@@ -65,6 +65,10 @@ public class MM1_prio {
 			res.put("numCreated", numCreated);
 			res.put("numServed", numServed);
 			res.put("qMax", q.getMax());
+			
+			res.put("mean queue time", q.getMeanWait());
+			res.put("mean weighted queue time", q.getMeanWeightedTime());
+			
 			//in case the server is still working at the end of the simulation the working time is added
 			if (currentJob != null) {
 				serviceTimeWorking += LENGTH_SIM - lastServicePiT;
