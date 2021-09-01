@@ -1,0 +1,179 @@
+Jasima Einsendeaufgaben
+
+2.2
+	FIFO vs LIFO
+
+	Produkt In:
+		10 min, expo
+		Art: 1-10: gleich
+
+	Produkt Out:
+		10 min, expo
+		Art: 1-10: gleich
+		Produkt nicht verfügbar → warten auf Produkt
+
+	Keine Ein- und Auslagerungszeiten
+	
+	Output:
+		mean Lagerzeit
+		max Lagerzeit
+
+2.3
+	Queue mit Priorität, Jobs werden von Maschine bearbeitet
+	
+	Simulation:
+		60t(ime)
+
+	Bearbeitungszeit:
+		10t
+		FIFO
+
+	Job:
+		Ankunftszeit:
+			1t: 20%
+			2t: 40%
+			3t: 20%
+			4t: 10%
+			5t: 10%
+		Prio: 1-10: gleich
+
+	Output:
+		max Jobs in Queue
+		Auslastung Maschine
+
+2.4
+	Verladestation, Palette auf LKW verladen
+	
+	Simulation:
+		10h
+
+	LKW:
+		Kapazität: 33 Paletten
+		Verladezeit 1 Palette: 1 min
+		Bereitstellung 1 LKW: 10 min
+		Sicherung Ladung 1 LKW: 20 min
+
+	Auftrag:
+		20-50 Paletten: gleich
+		1 Auftrag pro Stunde
+
+	Output:
+		mean Beladezeit
+		Überstunden notwendig?
+
+2.5
+	Lager, Bestellung
+
+	Simulation:
+		5 Wochen → 35 Tage
+
+	Bestellung Kunde:
+		1x pro Tag: 12:00
+		4-7: gleich
+		Lagerbestand 0 → Bestellung abgewiesen
+	
+	Produktionsauftrag Lager:
+		Lagerbestand <= 10 → Auftrag
+		nur 1 Auftrag gleichzeitig
+		Auftragsgröße: 20 minus Lagerbestand
+		0-5 Tage: gleich
+		Eingang: 17:00
+
+	Output:
+		mean nmr Abgewiesene Bestellungen
+	
+3.1
+	3 Maschinen, Bearbeitung Jobs
+
+	Simulation:
+		5 Tage
+		8h pro Tag
+
+	Ausfall Maschine:
+		alle 60 min, expo
+		immer nur eine Maschine 
+		Dauer: 10 min, expo
+		Erst nach Beendigung von Job
+	
+	Jobs:
+		10-30 min, gleich
+		Priorität: 1-10, gleich	
+
+	Bearbeitung:
+		10-120 min, gleich
+		1 Job pro Maschine
+		wird bei Erstellung des Jobs festgelegt
+		FIFO
+
+	Output:
+		Durchsatz
+		gewichtete Verspätung
+	
+	Untersuchung 1:
+		 4 Maschinen
+	Untersuchung 2:
+		Ausfall: 5 min
+
+3.2
+	2 Ladefahrzeuge, Verladung von LKW
+	
+	Simulation:
+		10 Tage
+		10h pro Tag
+
+	Beladezeit:
+		6 min, expo
+	
+	LKW:
+		Ankunft: 16 LKW pro 1h, expo → 3,75 min, expo
+		Wartezeit: 40€ pro 60 min
+	
+	Output:
+		Kosten
+	
+	Untersuchung:
+		Kosteneinsparung
+		Automatisierte Verladung: 2 min pro LKW
+
+3.3
+	Werkstatt
+	
+	Simulation:
+		5 Tage
+		8h pro Tag
+
+	Job:
+		Ankunftszeit:
+			5 min: 25%
+			10 min: 60%
+			15 min: 15%
+		Art:
+			1: 30%
+			2: 10%
+			3: 20%
+			4: 10%
+			5: 30%
+
+	Maschinen:
+		11
+		FIFO
+	
+	Arbeitsplan:
+		M: Maschine, AS: Arbeitsschritt, BZ: Bearbeitungszeit
+		
+ Art AS = 1 AS = 2 AS = 3 AS = 4
+     M  BZ  M  BZ  M  BZ  M  BZ
+  1  1  10  5  12  7  25  11 10
+  2  2  15  5  10  8  12  10 20
+  3  3  10  6  10  8  10  10 10
+  4  3  20  6  35  11 5   -  -
+  5  4  12  9  5   11 15  -  -
+
+	Output:
+		nmr Jobs in
+		nmr Jobs out, completed
+		nmr Jobs pro Art
+		Auslastung jeder Maschine
+		max Queue
+		mean Queue
+
